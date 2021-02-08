@@ -8,7 +8,7 @@ TOPPRA's algorithm is very fast, but for the optimization of robots with large d
 We will try to use HLS technology to accelerate it on FPGA to achieve lower power consumption and faster speed.
 
 ## Project planning and cooperation division
-1. Simplify the original code and verify CPU acceleration. (yangyuxin)
-2. Convert to hls friendly code. (yangyuxin, songtao)
-3. HLS optimization. (yangyuxin, songtao)
-4. Implementation and optimization using Vitis. (songtao)
+1. Simplify the original code and verify CPU acceleration. (JS00000)
+2. Convert to hls friendly code. (JS0000, blurSong)
+3. HLS optimization. (JS00000, blurSong)
+4. Implementation and optimization using Vitis. (blurSong)
