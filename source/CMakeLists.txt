@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.5)
 
 project(toppra
-  VERSION 0.3.0
+  VERSION 0.3.1
   # Disable because not available in CMake 3.5
   #DESCRIPTION "Library computing the time-optimal path parameterization."
   LANGUAGES CXX)
@@ -10,15 +10,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 # Dynamics
 option(BUILD_WITH_PINOCCHIO "Compile with Pinocchio library" OFF)
 # Solvers
-option(BUILD_WITH_qpOASES "Compile the wrapper for qpOASES" OFF)
+option(BUILD_WITH_qpOASES "Compile the wrapper for qpOASES" ON)
 option(BUILD_WITH_GLPK "Compile the wrapper for GLPK (GPL license)" OFF)
 # General options
 option(TOPPRA_DEBUG_ON "Set logging mode to on." OFF)
 option(TOPPRA_WARN_ON "Enable warning messages." ON)
 option(OPT_MSGPACK "Serialization using msgpack " OFF)
 # Bindings
-option(PYTHON_BINDINGS "Build bindings for Python" ON)
-set(PYTHON_VERSION 3.8 CACHE STRING "Build bindings for Python version")
 set(BUILD_WITH_PINOCCHIO_PYTHON false CACHE BOOL "Force compile with Pinocchio bindings")
 # This option is needed because sometime the flag
 # PINOCCHIO_WITH_PYTHON_INTERFACE is not properly set depsite a python
@@ -26,7 +24,6 @@ set(BUILD_WITH_PINOCCHIO_PYTHON false CACHE BOOL "Force compile with Pinocchio b
 # End of options
 
 
-set(PYBIND11_PYTHON_VERSION "${PYTHON_VERSION}")
 include(CMakePrintHelpers)
 
 find_package (Threads)
@@ -46,6 +43,13 @@ if(BUILD_WITH_GLPK)
     find_package(GLPK REQUIRED)
     message(STATUS "Found glpk ${GLPK_LIBRARY} ${GLPK_INCLUDE_DIR}")
 endif(BUILD_WITH_GLPK)
+
+find_package(OpenMP REQUIRED)
+if (OPENMP_FOUND)
+    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+    set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
+endif()
 
 add_subdirectory(src)
 
