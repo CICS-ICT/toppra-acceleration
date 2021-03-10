@@ -5,39 +5,7 @@ namespace toppra {
 namespace solver {
 
 namespace seidel {
-const LpSol INFEASIBLE { false };
 
-/// Compute value coeffs * [v 1] of a constraint.
-/// handling infinite values for v as, when v[i] is +/- infinity,
-/// c[i]*v[i] == 0 if v[i] == 0.
-template<class Coeffs, class Vars>
-typename Coeffs::Scalar value(const Eigen::MatrixBase<Coeffs>& coeffs,
-    const Eigen::MatrixBase<Vars>& vars)
-{
-  static_assert(Coeffs::RowsAtCompileTime == 1
-      && Vars::ColsAtCompileTime == 1
-      && Coeffs::ColsAtCompileTime == Vars::RowsAtCompileTime + 1,
-      "Size mismatch between coefficient (1x(N+1)) and vars (Nx1)");
-  typename Coeffs::Scalar res = coeffs(coeffs.cols()-1);
-  for (int i = 0; i < Vars::RowsAtCompileTime; ++i)
-    res += (coeffs[i]==0 && !std::isfinite(vars[i]) ? 0 : coeffs[i]*vars[i]);
-  return res;
-}
-
-namespace internal {
-  // projective coefficients to the line
-  // add respective coefficients to A_1d
-  template<typename Derived, typename Derived2>
-  inline void project_linear_constraint (const Eigen::MatrixBase<Derived>& Aj,
-      const Vector2& d_tan, const Vector2& zero_prj,
-      const Eigen::MatrixBase<Derived2>& Aj_1d_)
-  {
-    Derived2& Aj_1d = const_cast<Derived2&>(Aj_1d_.derived());
-    Aj_1d <<
-      Aj.template head<2>() * d_tan,
-      value(Aj, zero_prj);
-  }
-}
 
 #define TOPPRA_SEIDEL_LP2D(w,X)                         \
   TOPPRA_LOG_##w("Seidel LP 2D:\n"                      \

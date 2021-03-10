@@ -116,47 +116,29 @@ ReturnCode PathParametrizationAlgorithm::computeControllableSetsParallel(
     const Bound &vel_ends) {
   ReturnCode ret = ReturnCode::OK;
   bool solver_ret;
-  Vector g_upper{2}, g_lower{2}, solution;
-  // Vectors  solution_upper, solution_lower;
-  // solution_upper.assign(m_N, Vector::Zero(2, 1));
-  // solution_lower.assign(m_N, Vector::Zero(2, 1));
-
-  g_upper << 1e-9, -1;
-  g_lower << -1e-9, 1;
   m_data.controllable_sets.row(m_N) = vel_ends.cwiseAbs2();
 
   size_t be = GetCurrentTimeUsec();
 
-  bool batch_ok = true;
-  printf("omp omp_get_max_threads %d\n", omp_get_max_threads());
-  #pragma omp parallel for schedule(dynamic)
-  for (int i = 0; i < m_N; i++) {
-    // solver_ret = m_solver->solveStagewiseBatch(i, g_upper, solution_upper[i]);
-    solver_ret = m_solver->solveStagewiseBatch(i, g_upper);
-    if (!solver_ret) {
-      ret = ReturnCode::ERR_FAIL_CONTROLLABLE;
-      printf("Fail: solveStagewiseBatch, upper problem, idx: %d\n", i);
-      batch_ok = false;
-    }
-
-    // solver_ret = m_solver->solveStagewiseBatch(i, g_lower, solution_lower[i]);
-    solver_ret = m_solver->solveStagewiseBatch(i, g_lower);
-    if (!solver_ret) {
-      ret = ReturnCode::ERR_FAIL_CONTROLLABLE;
-      printf("Fail: solveStagewiseBatch, lower problem, idx: %d\n", i);
-      batch_ok = false;
-    }
+  // Vectors  solution_upper, solution_lower;
+  // solution_upper.assign(m_N, Vector::Zero(2, 1));
+  // solution_lower.assign(m_N, Vector::Zero(2, 1));
+  // solver_ret = m_solver->solveStagewiseBatch(solution_upper, solution_lower);
+  solver_ret = m_solver->solveStagewiseBatch();
+  if (!solver_ret) {
+    ret = ReturnCode::ERR_FAIL_CONTROLLABLE;
+    printf("Fail: solveStagewiseBatch\n");
+    return ret;
   }
-  if (!batch_ok) return ret;
-
   size_t en = GetCurrentTimeUsec();
   printf("time of Batch:    %fms\n", (en - be)/1000.0);
   be = en;
 
   Bound x_next;
+  Vector solution;
   for (int i = m_N - 1; i != -1; i--) {
     x_next = m_data.controllable_sets.row(i + 1);
-    solver_ret = m_solver->solveStagewiseBack(i, g_upper, x_next, solution);
+    solver_ret = m_solver->solveStagewiseBack(i, true, x_next, solution);
     if (!solver_ret) {
       ret = ReturnCode::ERR_FAIL_CONTROLLABLE;
       printf("Fail: solveStagewiseBack, upper problem, idx: %d\n", i);
@@ -164,7 +146,7 @@ ReturnCode PathParametrizationAlgorithm::computeControllableSetsParallel(
     }
     m_data.controllable_sets(i, 1) = solution[1];
 
-    solver_ret = m_solver->solveStagewiseBack(i, g_lower, x_next, solution);
+    solver_ret = m_solver->solveStagewiseBack(i, false, x_next, solution);
     if (!solver_ret) {
       ret = ReturnCode::ERR_FAIL_CONTROLLABLE;
       printf("Fail: solveStagewiseBack, lower problem, idx: %d\n", i);

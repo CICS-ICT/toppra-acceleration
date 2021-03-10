@@ -11,6 +11,8 @@ typedef Eigen::Matrix<value_type, 3, 1> Vector3;
 typedef Eigen::Matrix<value_type, 1, 3> RowVector3;
 typedef Eigen::Matrix<value_type, Eigen::Dynamic, 2> MatrixX2;
 typedef Eigen::Matrix<value_type, Eigen::Dynamic, 3> MatrixX3;
+typedef std::vector<MatrixX2, Eigen::aligned_allocator<MatrixX2> > MatricesX2;
+typedef std::vector<MatrixX3, Eigen::aligned_allocator<MatrixX3> > MatricesX3;
 
 namespace seidel {
 constexpr int LOW_0  = -1,
@@ -32,6 +34,43 @@ struct LpSol {
   Vector2 optvar;
   std::array<int, 2> active_c;
 };
+
+
+const LpSol INFEASIBLE { false };
+
+/// Compute value coeffs * [v 1] of a constraint.
+/// handling infinite values for v as, when v[i] is +/- infinity,
+/// c[i]*v[i] == 0 if v[i] == 0.
+template<class Coeffs, class Vars>
+typename Coeffs::Scalar value(const Eigen::MatrixBase<Coeffs>& coeffs,
+    const Eigen::MatrixBase<Vars>& vars)
+{
+  static_assert(Coeffs::RowsAtCompileTime == 1
+      && Vars::ColsAtCompileTime == 1
+      && Coeffs::ColsAtCompileTime == Vars::RowsAtCompileTime + 1,
+      "Size mismatch between coefficient (1x(N+1)) and vars (Nx1)");
+  typename Coeffs::Scalar res = coeffs(coeffs.cols()-1);
+  for (int i = 0; i < Vars::RowsAtCompileTime; ++i)
+    res += (coeffs[i]==0 && !std::isfinite(vars[i]) ? 0 : coeffs[i]*vars[i]);
+  return res;
+}
+
+constexpr value_type infi = 1e6;
+
+namespace internal {
+  // projective coefficients to the line
+  // add respective coefficients to A_1d
+  template<typename Derived, typename Derived2>
+  inline void project_linear_constraint (const Eigen::MatrixBase<Derived>& Aj,
+      const Vector2& d_tan, const Vector2& zero_prj,
+      const Eigen::MatrixBase<Derived2>& Aj_1d_)
+  {
+    Derived2& Aj_1d = const_cast<Derived2&>(Aj_1d_.derived());
+    Aj_1d <<
+      Aj.template head<2>() * d_tan,
+      value(Aj, zero_prj);
+  }
+}
 
 inline std::ostream& operator<< (std::ostream& os, const LpSol1d& sol)
 {

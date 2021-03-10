@@ -1,48 +1,8 @@
 #include <toppra/solver/seidel-parallel.hpp>
-#include <toppra/solver/seidel-internal.hpp>
+#include <toppra/solver/seidel-parallel-hls.hpp>
 
 namespace toppra {
 namespace solver {
-
-namespace seidel {
-const LpSol INFEASIBLE { false };
-
-/// Compute value coeffs * [v 1] of a constraint.
-/// handling infinite values for v as, when v[i] is +/- infinity,
-/// c[i]*v[i] == 0 if v[i] == 0.
-template<class Coeffs, class Vars>
-typename Coeffs::Scalar value(const Eigen::MatrixBase<Coeffs>& coeffs,
-    const Eigen::MatrixBase<Vars>& vars)
-{
-  static_assert(Coeffs::RowsAtCompileTime == 1
-      && Vars::ColsAtCompileTime == 1
-      && Coeffs::ColsAtCompileTime == Vars::RowsAtCompileTime + 1,
-      "Size mismatch between coefficient (1x(N+1)) and vars (Nx1)");
-  typename Coeffs::Scalar res = coeffs(coeffs.cols()-1);
-  for (int i = 0; i < Vars::RowsAtCompileTime; ++i)
-    res += (coeffs[i]==0 && !std::isfinite(vars[i]) ? 0 : coeffs[i]*vars[i]);
-  return res;
-}
-
-constexpr value_type infi = 1e6;
-
-namespace internal {
-  // projective coefficients to the line
-  // add respective coefficients to A_1d
-  template<typename Derived, typename Derived2>
-  inline void project_linear_constraint (const Eigen::MatrixBase<Derived>& Aj,
-      const Vector2& d_tan, const Vector2& zero_prj,
-      const Eigen::MatrixBase<Derived2>& Aj_1d_)
-  {
-    Derived2& Aj_1d = const_cast<Derived2&>(Aj_1d_.derived());
-    Aj_1d <<
-      Aj.template head<2>() * d_tan,
-      value(Aj, zero_prj);
-  }
-}
-
-}
-
 
 void SeidelParallel::initialize (const LinearConstraintPtrs& constraints, const GeometricPathPtr& path,
         const Vector& times)
@@ -58,6 +18,12 @@ void SeidelParallel::initialize (const LinearConstraintPtrs& constraints, const 
     nC += linParam.F[0].rows();
 
   N = nbStages();
+  g_upper << -1e-9, 1;
+  g_lower << 1e-9, -1;
+
+  // objective function (because seidel solver does max)
+  v_upper = g_upper.head<2>();
+  v_lower = g_lower.head<2>();
 
   // init constraint coefficients for the 2d lps, which are
   // m_A, m_low, m_high.
@@ -109,7 +75,6 @@ void SeidelParallel::initialize (const LinearConstraintPtrs& constraints, const 
   m_solution_lower.assign(N+1, seidel::LpSol());
 
 }
-
 
 
 #define TOPPRA_SEIDEL_LP2D(w,X)                         \
@@ -260,44 +225,38 @@ void SeidelParallel::solve_lp2d_parallel(bool isback, const RowVector2 v, const 
 
 #undef TOPPRA_SEIDEL_LP2D
 
-
-// bool SeidelParallel::solveStagewiseBatch(int i, const Vector& g, Vector& solution)
-bool SeidelParallel::solveStagewiseBatch(int i, const Vector& g)
+// bool SeidelParallel::solveStagewiseBatch(Vectors& solution_upper, Vectors& solution_lower)
+bool SeidelParallel::solveStagewiseBatch()
 {
-  assert (i <= N && 0 <= i);
+  return SeidelParallelSolveStagewiseBatchHLS(N, m_A, m_low, m_high, m_solution_upper, m_solution_lower);
+  // bool batch_ok = true;
+  // printf("omp omp_get_max_threads %d\n", omp_get_max_threads());
 
-  // objective function (because seidel solver does max)
-  RowVector2 v (-g.head<2>());
+  // #pragma omp parallel for schedule(dynamic)
+  // for (int i = 0; i < N; i++) {
+  //   solve_lp2d_parallel(false, v_upper, m_A[i], m_low.row(i), m_high.row(i), m_A_1d[i], m_solution_upper[i]);
+  //   if (!m_solution_upper[i].feasible) {
+  //     printf("Fail: solveStagewiseBatch, upper problem, idx: %d\n", i);
+  //     batch_ok = false;
+  //   }
+  //   // solution_upper[i] = m_solution_upper[i].optvar;
 
-  // warmstarting feature: one in two solvers, upper and lower,
-  // is be selected depending on the sign of g[1]
-  bool upper (g[1] > 0);
-
-  if (upper) {
-    solve_lp2d_parallel(false, v, m_A[i], m_low.row(i), m_high.row(i), m_A_1d[i], m_solution_upper[i]);
-    if (m_solution_upper[i].feasible) {
-      // solution = m_solution_upper[i].optvar;
-      return true;
-    }
-  } else {
-    solve_lp2d_parallel(false, v, m_A[i], m_low.row(i), m_high.row(i), m_A_1d[i], m_solution_lower[i]);
-    if (m_solution_lower[i].feasible) {
-      // solution = m_solution_lower[i].optvar;
-      return true;
-    }
-  }
-
-  TOPPRA_LOG_DEBUG("Seidel: solver fails (upper ? " << upper << ')');
-  // printf("Seidel: solver fails %s, i = %d\n", upper?"upper":"down", i);
-  return false;
+  //   solve_lp2d_parallel(false, v_lower, m_A[i], m_low.row(i), m_high.row(i), m_A_1d[i], m_solution_lower[i]);
+  //   if (!m_solution_lower[i].feasible) {
+  //     printf("Fail: solveStagewiseBatch, lower problem, idx: %d\n", i);
+  //     batch_ok = false;
+  //   }
+  //   // solution_lower[i] = m_solution_lower[i].optvar;
+  // }
+  // return batch_ok;
 }
 
 
-bool SeidelParallel::solveStagewiseBack(int i, const Vector& g, const Bound& xNext, Vector& solution)
+bool SeidelParallel::solveStagewiseBack(int i, bool upper, const Bound& xNext, Vector& solution)
 {
   // printf("good\n");
   assert (i <= N && 0 <= i);
-
+  
   // handle x_next_min <= 2 delta u + x_i <= x_next_max
   value_type delta = deltas()[i];
   if (xNext[0] <= -seidel::infi) { 
@@ -315,23 +274,16 @@ bool SeidelParallel::solveStagewiseBack(int i, const Vector& g, const Bound& xNe
     m_A[i].row(nC-1) << 2*delta, 1, -xNext[1];
   }
 
-  // objective function (because seidel solver does max)
-  RowVector2 v (-g.head<2>());
-
-  // warmstarting feature: one in two solvers, upper and lower,
-  // is be selected depending on the sign of g[1]
-  bool upper (g[1] > 0);
-
   if (upper) {
     // m_solution_upper[i].optvar = solution;
-    solve_lp2d_parallel(true, v, m_A[i], m_low.row(i), m_high.row(i), m_A_1d[i], m_solution_upper[i]);
+    solve_lp2d_parallel(true, v_upper, m_A[i], m_low.row(i), m_high.row(i), m_A_1d[i], m_solution_upper[i]);
     if (m_solution_upper[i].feasible) {
       solution = m_solution_upper[i].optvar;
       return true;
     }
   } else {
     // m_solution_lower[i].optvar = solution;
-    solve_lp2d_parallel(true, v, m_A[i], m_low.row(i), m_high.row(i), m_A_1d[i], m_solution_lower[i]);
+    solve_lp2d_parallel(true, v_lower, m_A[i], m_low.row(i), m_high.row(i), m_A_1d[i], m_solution_lower[i]);
     if (m_solution_lower[i].feasible) {
       solution = m_solution_lower[i].optvar;
       return true;

@@ -1,6 +1,7 @@
 #ifndef TOPPRA_SOLVER_SEIDEL_PARALLEL_HPP
 #define TOPPRA_SOLVER_SEIDEL_PARALLEL_HPP
 
+#include <omp.h>
 #include <memory.h>
 #include <toppra/solver.hpp>
 #include <toppra/solver/seidel-internal.hpp>
@@ -26,17 +27,16 @@ class SeidelParallel : public Solver {
         const Bound& x, const Bound& xNext,
         Vector& solution);
 
-    bool solveStagewiseBatch(int i, const Vector& g);
-    bool solveStagewiseBack(int i, const Vector& g, const Bound& xNext, Vector& solution);
+    // bool solveStagewiseBatch(Vectors& solution_upper, Vectors& solution_lower);
+    bool solveStagewiseBatch();
+    bool solveStagewiseBack(int i, bool upper, const Bound& xNext, Vector& solution);
 
   private:
     size_t nC;
     size_t N;
 
-    typedef Eigen::Matrix<value_type, Eigen::Dynamic, 2> MatrixX2;
-    typedef Eigen::Matrix<value_type, Eigen::Dynamic, 3> MatrixX3;
-    typedef std::vector<MatrixX2, Eigen::aligned_allocator<MatrixX2> > MatricesX2;
-    typedef std::vector<MatrixX3, Eigen::aligned_allocator<MatrixX3> > MatricesX3;
+    Vector g_upper{2}, g_lower{2};
+    RowVector2 v_upper, v_lower;
 
     MatricesX3 m_A;
     MatricesX2 m_A_1d;
