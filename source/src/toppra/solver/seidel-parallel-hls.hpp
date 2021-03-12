@@ -1,7 +1,6 @@
 #ifndef TOPPRA_SOLVER_SEIDEL_PARALLEL_HLS_HPP
 #define TOPPRA_SOLVER_SEIDEL_PARALLEL_HLS_HPP
 
-#include <memory.h>
 #include <toppra/solver.hpp>
 #include <toppra/solver/seidel-internal.hpp>
 

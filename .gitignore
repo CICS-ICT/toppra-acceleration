@@ -1,5 +1,13 @@
 # C extensions
 *.so
+*.a
 
-source/build/
+*build/
 
+*log*
+hls/toppra_hls.prj/.*
+hls/toppra_hls.prj/*/.autopilot/
+hls/toppra_hls.prj/*/.tcls/
+*csim/
+*impl/
+*syn/
