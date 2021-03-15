@@ -25,6 +25,8 @@
 #  qpOASES_LIBRARIES - The libraries needed to use qpOASES
 #  qpOASES_DEFINITIONS - Compiler switches required for using qpOASES
 
+set(qpOASES_PREFIX "/opt/openrobots")
+
 FIND_PATH(qpOASES_INCLUDE_DIR
   NAMES qpOASES.hpp
   PATHS ${qpOASES_PREFIX} ${qpOASES_PREFIX}/include

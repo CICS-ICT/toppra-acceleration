@@ -11,5 +11,3 @@ We will try to use HLS technology to accelerate it on FPGA to achieve lower powe
 * Build the project in source
 * In dir hls, type`make`
 * open hls/toppra_hls.prj in vivado_hls
-*  
-

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<autopilotfilemapping:AutoPilotFileMapping xmlns:autopilotfilemapping="www.autoesl.com/autopilotfilemapping">
+  <source>
+    <originFiles name="seidel-parallel-hls.cpp" path="/home/data/toppra-acceleration/hls/src/toppra/solver/seidel-parallel-hls.cpp"/>
+  </source>
+  <testbench>
+    <originFiles name="gtest_main.cpp" path="/home/data/toppra-acceleration/source/tests/gtest_main.cpp"/>
+    <originFiles name="test_parallel_approach.cpp" path="/home/data/toppra-acceleration/source/tests/test_parallel_approach.cpp"/>
+  </testbench>
+</autopilotfilemapping:AutoPilotFileMapping>

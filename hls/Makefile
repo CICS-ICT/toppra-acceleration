@@ -14,13 +14,12 @@ TOPPRA_OBJECTS 		+= 	$(TOPPRA_OBJ_PATH)/parametrizer/const_accel.cpp.o
 TOPPRA_OBJECTS 		+= 	$(TOPPRA_OBJ_PATH)/parametrizer.cpp.o
 TOPPRA_OBJECTS 		+= 	$(TOPPRA_OBJ_PATH)/algorithm.cpp.o
 TOPPRA_OBJECTS 		+= 	$(TOPPRA_OBJ_PATH)/algorithm/toppra.cpp.o
-TOPPRA_OBJECTS 		+= 	$(TOPPRA_OBJ_PATH)/solver/qpOASES-wrapper.cpp.o
+# TOPPRA_OBJECTS 		+= 	$(TOPPRA_OBJ_PATH)/solver/qpOASES-wrapper.cpp.o
 
 all: build
 
 build: 
 	mkdir -p lib
-	cp $(SOURCE_PATH)/build/lib/libgtest.a lib/
 	g++ -shared -o lib/libtopprah.so $(TOPPRA_OBJECTS)
 	
 

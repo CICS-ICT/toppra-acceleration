@@ -6,8 +6,6 @@ This is an implementation of the TOPP-RA algorithm. ([Github](https://github.com
 ```sh
 
 # build
-export LD_LIBRARY_PATH=/opt/openrobots/lib:${LD_LIBRARY_PATH}
-export CMAKE_PREFIX_PATH=/opt/openrobots
 mkdir build
 cd build
 cmake ..
