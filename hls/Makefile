@@ -21,8 +21,7 @@ all: build
 build: 
 	mkdir -p lib
 	g++ -shared -o lib/libtopprah.so $(TOPPRA_OBJECTS)
-	cp /usr/local/lib64/libgtest.a lib/
-
+	cp $(SOURCE_PATH)/build/lib/libgtest.a lib/
 clean:
 	rm -rf lib/
 
