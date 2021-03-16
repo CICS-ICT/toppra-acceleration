@@ -1,8 +1,8 @@
-<project xmlns="com.autoesl.autopilot.project" name="toppra_hls.prj" top="SeidelParallelSolveStagewiseBatchHLS">
+<project xmlns="com.autoesl.autopilot.project" name="toppra_hls.prj.v2018" top="SeidelParallelSolveStagewiseBatchHLS">
     <files>
         <file name="src/toppra/solver/seidel-parallel-hls.cpp" sc="0" tb="false" cflags="-I../../../source/src -I../../../source/build/src -I/usr/local/include/eigen3"/>
-        <file name="../../../source/tests/gtest_main.cpp" sc="0" tb="1" cflags="-I../../../source/src -I../../../source/build/src -I../../../source/tests -I/usr/local/include/eigen3"/>
-        <file name="../../../source/tests/test_parallel_approach.cpp" sc="0" tb="1" cflags="-I../../../source/src -I../../../source/build/src -I../../../source/tests -I/usr/local/include/eigen3"/>
+        <file name="../../../source/tests/gtest_main.cpp" sc="0" tb="1" cflags="-I../../../source/src -I../../../source/build/src -I../../../source/tests -I../../../source/build/googletest-src/googletest/include"/>
+        <file name="../../../source/tests/test_parallel_approach.cpp" sc="0" tb="1" cflags="-I../../../source/src -I../../../source/build/src -I../../../source/tests -I../../../source/build/googletest-src/googletest/include"/>
     </files>
     <includePaths/>
     <libraryPaths/>
