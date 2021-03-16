@@ -6,8 +6,8 @@
 open_project toppra_hls.prj.v2020
 set_top SeidelParallelSolveStagewiseBatchHLS
 add_files src/toppra/solver/seidel-parallel-hls.cpp -csimflags "-I../../../source/src -I../../../source/build/src -I/usr/local/include/eigen3"
-add_files -tb ../source/tests/test_parallel_approach.cpp -cflags "-Wno-unknown-pragmas" -csimflags "-I../../../source/src -I../../../source/build/src -I../../../source/tests -I../../../../../usr/local/include/eigen3 -Wno-unknown-pragmas"
-add_files -tb ../source/tests/gtest_main.cpp -cflags "-Wno-unknown-pragmas" -csimflags "-I../../../source/src -I../../../source/build/src -I../../../source/tests -I../../../../../usr/local/include/eigen3 -Wno-unknown-pragmas"
+add_files -tb ../source/tests/gtest_main.cpp -cflags "-Wno-unknown-pragmas" -csimflags "-I../../../source/src -I../../../source/tests -I../../../source/build/src -I../../../source/build/googletest-src/googletest/include -Wno-unknown-pragmas"
+add_files -tb ../source/tests/test_parallel_approach.cpp -cflags "-Wno-unknown-pragmas" -csimflags "-I../../../source/src -I../../../source/tests -I../../../source/build/src -I../../../source/build/googletest-src/googletest/include -Wno-unknown-pragmas"
 open_solution "solution1" -flow_target vivado
 set_part {xc7z020-clg400-1}
 create_clock -period 10 -name default
